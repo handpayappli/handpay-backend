@@ -131,7 +131,22 @@ func main() {
 			"balance": wallet.Balance,
 		})
 	})
+	// --- ROUTE 5 : HISTORIQUE DES TRANSACTIONS ---
+	app.Get("/history/:user_id", func(c *fiber.Ctx) error {
+		userId := c.Params("user_id")
+		
+		// Trouver le wallet de l'user
+		var wallet models.Wallet
+		if err := database.DB.Where("user_id = ?", userId).First(&wallet).Error; err != nil {
+			return c.Status(404).JSON(fiber.Map{"error": "Wallet introuvable"})
+		}
 
+		// Trouver les 10 dernières transactions de ce wallet
+		var transactions []models.Transaction
+		database.DB.Where("wallet_id = ?", wallet.ID).Order("created_at desc").Limit(10).Find(&transactions)
+
+		return c.JSON(transactions)
+	})
 		fmt.Println("👂 En écoute sur toutes les interfaces (0.0.0.0:3000)")
 	app.Listen("0.0.0.0:3000")
 }
